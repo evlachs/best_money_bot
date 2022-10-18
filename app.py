@@ -9,7 +9,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from messages.messages import MESSAGES
 from conf.config import TOKEN, CHANNEL_ID, ADMIN_ID
 from commands.commands import set_default_commands
-from keyboard.keyboards import user_keyboard, admin_keyboard, confirm_post_keyboard,\
+from keyboard.keyboards import user_keyboard, admin_keyboard, confirm_post_keyboard, location_keyboard,\
     make_a_post_keyboard, cancel_photo_keyboard, operations_keyboard, operations_chat_keyboard, info_keyboard
 
 logging.basicConfig(level=logging.INFO)
@@ -192,24 +192,35 @@ async def process_gender(callback_query: types.CallbackQuery):
 @dp.message_handler(state=[Form.grn_to_rub, Form.transfer_abroad])
 async def cancel_handler(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
-        data['change'] = f'заявка: {message.text}\nполучено от пользователя: @{message.from_user.username}'
+        data['user_data'] = f'имя: {message.from_user.full_name}\nid: {message.from_user.id}\n' \
+                            f'url: {message.from_user.url}\nusername: @{message.from_user.username}'
+        data['application_id'] = message.message_id
+    await bot.send_message(message.from_user.id, MESSAGES['share_contact'], reply_markup=location_keyboard)
+
+
+@dp.message_handler(content_types=['contact'], state=[Form.grn_to_rub, Form.transfer_abroad])
+async def default(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        data['contact_id'] = message.message_id
+    await state.finish()
     current_state = await state.get_state()
     if current_state == 'Form:grn_to_rub':
-        await state.finish()
-        await bot.send_message(message.from_user.id, MESSAGES['application_sent'])
         for admin in ADMIN_ID:
             try:
-                await bot.send_message(admin, data['change'])
+                await bot.forward_message(admin, message.from_user.id, data['application_id'])
+                await bot.forward_message(admin, message.from_user.id, data['contact_id'])
+                await bot.send_message(admin, data['user_data'])
             except:
                 continue
     else:
-        await state.finish()
-        await bot.send_message(message.from_user.id, MESSAGES['application_sent'])
         for admin in ADMIN_ID:
             try:
-                await bot.send_message(admin, data['change'])
+                await bot.forward_message(admin, message.from_user.id, data['application_id'])
+                await bot.forward_message(admin, message.from_user.id, data['contact_id'])
+                await bot.send_message(admin, data['user_data'])
             except:
                 continue
+    await bot.send_message(message.from_user.id, MESSAGES['application_sent'])
 
 
 if __name__ == '__main__':

@@ -16,6 +16,10 @@ rules_button = types.InlineKeyboardButton('правила и оферта', call
 security_button = types.InlineKeyboardButton('о безопасности', callback_data='security')
 about_us_button = types.InlineKeyboardButton('о нас', callback_data='about_us')
 
+location_button = types.KeyboardButton('Поделиться контаком', request_contact=True)
+
+location_keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True).add(location_button)
+
 
 user_keyboard = types.InlineKeyboardMarkup()
 user_keyboard.add(operations_button).add(main_screen_button).add(chat_button).add(reviews_button).add(info_button)
