@@ -58,31 +58,31 @@ async def commands_handler(message: types.Message):
 
 
 @dp.callback_query_handler(lambda c: c.data == 'info')
-async def delete_links_handler(callback_query: types.CallbackQuery):
+async def info_message(callback_query: types.CallbackQuery):
     await bot.answer_callback_query(callback_query.id)
     await bot.send_message(callback_query.from_user.id, MESSAGES['info'], reply_markup=info_keyboard)
 
 
 @dp.callback_query_handler(lambda c: c.data == 'rules')
-async def delete_links_handler(callback_query: types.CallbackQuery):
+async def send_rules_file(callback_query: types.CallbackQuery):
     await bot.answer_callback_query(callback_query.id)
     await bot.send_document(callback_query.from_user.id, open('info/rules.pdf', 'rb'))
 
 
 @dp.callback_query_handler(lambda c: c.data == 'security')
-async def delete_links_handler(callback_query: types.CallbackQuery):
+async def send_security_file(callback_query: types.CallbackQuery):
     await bot.answer_callback_query(callback_query.id)
     await bot.send_document(callback_query.from_user.id, open('info/security.pdf', 'rb'))
 
 
 @dp.callback_query_handler(lambda c: c.data == 'about_us')
-async def delete_links_handler(callback_query: types.CallbackQuery):
+async def send_about_us_file(callback_query: types.CallbackQuery):
     await bot.answer_callback_query(callback_query.id)
     await bot.send_document(callback_query.from_user.id, open('info/about_us.pdf', 'rb'))
 
 
 @dp.message_handler(commands=['post'])
-async def make_a_post(message: types.Message):
+async def make_a_post_command(message: types.Message):
     if message.from_user.id not in ADMIN_ID:
         return
     await Form.title.set()
@@ -90,7 +90,7 @@ async def make_a_post(message: types.Message):
 
 
 @dp.callback_query_handler(lambda c: c.data == 'post')
-async def delete_links_handler(callback_query: types.CallbackQuery):
+async def make_a_post_callback(callback_query: types.CallbackQuery):
     if callback_query.from_user.id not in ADMIN_ID:
         return
     await bot.answer_callback_query(callback_query.id)
@@ -99,8 +99,7 @@ async def delete_links_handler(callback_query: types.CallbackQuery):
 
 
 @dp.message_handler(state=Form.title)
-async def process_gender(message: types.Message, state: FSMContext):
-
+async def set_post_title(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['title'] = f'<b>{message.text}</b>\n\n'
     await Form.description.set()
@@ -108,7 +107,7 @@ async def process_gender(message: types.Message, state: FSMContext):
 
 
 @dp.message_handler(state=Form.description)
-async def process_gender(message: types.Message, state: FSMContext):
+async def set_post_description(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['description'] = message.text
     await Form.photo.set()
@@ -116,7 +115,7 @@ async def process_gender(message: types.Message, state: FSMContext):
 
 
 @dp.message_handler(state=Form.photo, content_types='photo')
-async def process_gender(message: types.Message, state: FSMContext):
+async def set_post_photo(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['photo'] = message.photo[-1].file_id
     await bot.send_message(message.from_user.id, MESSAGES['confirm_post'])
@@ -129,7 +128,7 @@ async def process_gender(message: types.Message, state: FSMContext):
 
 
 @dp.callback_query_handler(lambda c: c.data == 'cancel_photo', state=Form.photo)
-async def confirm_post(callback_query: types.CallbackQuery, state: FSMContext):
+async def cancel_photo(callback_query: types.CallbackQuery, state: FSMContext):
     await bot.answer_callback_query(callback_query.id)
     async with state.proxy() as data:
         data['photo'] = None
@@ -172,25 +171,25 @@ async def confirm_post(callback_query: types.CallbackQuery, state: FSMContext):
 
 
 @dp.callback_query_handler(lambda c: c.data == 'operations')
-async def cancel_handler(callback_query: types.CallbackQuery):
+async def show_operations(callback_query: types.CallbackQuery):
     await bot.answer_callback_query(callback_query.id)
     await bot.send_message(callback_query.from_user.id, MESSAGES['choose_operation'], reply_markup=operations_keyboard)
 
 
 @dp.callback_query_handler(lambda c: c.data == 'grn_to_rub')
-async def process_gender(callback_query: types.CallbackQuery):
+async def grn_to_rub(callback_query: types.CallbackQuery):
     await Form.grn_to_rub.set()
     await bot.send_message(callback_query.from_user.id, MESSAGES['grn_to_rub'])
 
 
 @dp.callback_query_handler(lambda c: c.data == 'transfer_abroad')
-async def process_gender(callback_query: types.CallbackQuery):
+async def transfer_abroad(callback_query: types.CallbackQuery):
     await Form.transfer_abroad.set()
     await bot.send_message(callback_query.from_user.id, MESSAGES['transfer_abroad'])
 
 
 @dp.message_handler(state=[Form.grn_to_rub, Form.transfer_abroad])
-async def cancel_handler(message: types.Message, state: FSMContext):
+async def get_user_contact(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['user_data'] = f'имя: {message.from_user.full_name}\nid: {message.from_user.id}\n' \
                             f'url: {message.from_user.url}\nusername: @{message.from_user.username}'
@@ -199,10 +198,9 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 
 
 @dp.message_handler(content_types=['contact'], state=[Form.grn_to_rub, Form.transfer_abroad])
-async def default(message: types.Message, state: FSMContext):
+async def confirm_application(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['contact_id'] = message.message_id
-    await state.finish()
     current_state = await state.get_state()
     if current_state == 'Form:grn_to_rub':
         for admin in ADMIN_ID:
@@ -220,6 +218,7 @@ async def default(message: types.Message, state: FSMContext):
                 await bot.send_message(admin, data['user_data'])
             except:
                 continue
+    await state.finish()
     await bot.send_message(message.from_user.id, MESSAGES['application_sent'])
 
 
