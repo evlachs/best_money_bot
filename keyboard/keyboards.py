@@ -11,7 +11,7 @@ confirm_post_button = types.InlineKeyboardButton('отправить пост', 
 cancel_photo_button = types.InlineKeyboardButton('пост без фото', callback_data='cancel_photo')
 grn_to_rub_button = types.InlineKeyboardButton('обмен ГРН на РУБ', callback_data='grn_to_rub')
 transfer_abroad_button = types.InlineKeyboardButton('перевод за границу', callback_data='transfer_abroad')
-go_to_bot_button = types.InlineKeyboardButton('перейти в бот для совершения операции', url='https://t.me/test_bestapi_bot')
+go_to_bot_button = types.InlineKeyboardButton('перейти в бот для совершения операции', url='https://t.me/BestMoneySolution')
 rules_button = types.InlineKeyboardButton('правила и оферта', callback_data='rules')
 security_button = types.InlineKeyboardButton('о безопасности', callback_data='security')
 about_us_button = types.InlineKeyboardButton('о нас', callback_data='about_us')
